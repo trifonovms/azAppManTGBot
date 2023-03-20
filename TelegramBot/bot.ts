@@ -102,7 +102,14 @@ export const getBot= (TOKEN_BOT:string) : Bot => {
         await ctx.conversation.enter("deleteSubscriptions");
     });
     
-    bot.command("start", (ctx) => ctx.reply("Welcome! Up and running."));
+    bot.command("start", async (ctx) => {
+        const tgUser = getUserFromContext(ctx);
+        if(ctx.message.text === '/start'){
+            await addTGUser(tgUser);
+            return ctx.reply(`Hi, ${tgUser.first_name}!`);
+        }
+    });
+    
     //This function would be added to the dispatcher as a handler for messages coming from the Bot API
     bot.on("message", async (ctx) => {
         const tgUser = getUserFromContext(ctx);
