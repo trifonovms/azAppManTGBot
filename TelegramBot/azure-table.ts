@@ -5,8 +5,8 @@ import { RestError } from "@azure/core-rest-pipeline";
 
 setLogLevel("info");
 
-const account = "appointmentcrawlergac19";
-const accountKey = "qQb064LwcqGVudB7W2nWT0VgufiRo/IwaPKhsVrEpnbWD7et/EoQYohGNUgKh1Zu16/muV5f8aki+ASt9OEWnQ==";
+const account = process.env["storageAccount"];// "appointmentcrawlergac19";
+const accountKey = process.env["storageAccountKey"];//"qQb064LwcqGVudB7W2nWT0VgufiRo/IwaPKhsVrEpnbWD7et/EoQYohGNUgKh1Zu16/muV5f8aki+ASt9OEWnQ==";
 const tblUsers = "tgUsers"
 const tbUserPreferences = "tgUserPreferences";
 const partitionKey = "Users";
