@@ -1,12 +1,13 @@
 import { TableServiceClient, TableClient, AzureNamedKeyCredential, odata } from "@azure/data-tables";
 import { setLogLevel } from "@azure/logger";
 import { RestError } from "@azure/core-rest-pipeline";
+import { Entity, TUser, TUserPreferences } from "./azure-types";
 
 
 setLogLevel("info");
 
-const account = process.env["storageAccount"];// "appointmentcrawlergac19";
-const accountKey = process.env["storageAccountKey"];//"qQb064LwcqGVudB7W2nWT0VgufiRo/IwaPKhsVrEpnbWD7et/EoQYohGNUgKh1Zu16/muV5f8aki+ASt9OEWnQ==";
+const account = process.env["storageAccount"];
+const accountKey = process.env["storageAccountKey"];
 const tblUsers = "tgUsers"
 const tbUserPreferences = "tgUserPreferences";
 const partitionKey = "Users";
@@ -19,35 +20,11 @@ const credential = new AzureNamedKeyCredential(account, accountKey);
 //   `https://${account}.table.core.windows.net`,
 //   credential
 // );
-type TAzureTable = {
-    partitionKey:string;
-    rowKey:string;
-}
-export enum TUserPreferencesType {
-    permit,
-    knowledgeTest,
-}
-export type TUserPreferences = {
-    userId: number;
-    zipCode: string;
-    milesArea: number;
-    type: TUserPreferencesType
-}
 
-export type TUser = {
-    id: number;
-    first_name:  string;
-    last_name:  string;
-    username:  string;
-}
+const connectionString = process.env["AzureWebJobsStorage"];
+const usersTable = TableClient.fromConnectionString(connectionString, tblUsers);
 
-
-type Entity<T> = {
-    partitionKey?: string;
-    rowKey?: string;
-}&T;
-
-const usersTable = new TableClient(`https://${account}.table.core.windows.net`, tblUsers, credential);
+const usersTable2 = new TableClient(`https://${account}.table.core.windows.net`, tblUsers, credential);
 const userPreferencesTable = new TableClient(`https://${account}.table.core.windows.net`, tbUserPreferences, credential);
 
 export const getUser =async (entityUser:Entity<TUser>) => {
