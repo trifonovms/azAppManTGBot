@@ -6,15 +6,11 @@ import { Entity, TUser, TUserPreferences } from "./azure-types";
 
 setLogLevel("info");
 
-const account = process.env["storageAccount"];
-const accountKey = process.env["storageAccountKey"];
 const tblUsers = "tgUsers"
 const tbUserPreferences = "tgUserPreferences";
 const partitionKey = "Users";
 const partitionKeyUserPreferences = "UserPreferences";
 const rowKeyTemplate = "row";
-
-const credential = new AzureNamedKeyCredential(account, accountKey);
 
 // const serviceClient = new TableServiceClient(
 //   `https://${account}.table.core.windows.net`,
@@ -22,10 +18,10 @@ const credential = new AzureNamedKeyCredential(account, accountKey);
 // );
 
 const connectionString = process.env["AzureWebJobsStorage"];
-const usersTable = TableClient.fromConnectionString(connectionString, tblUsers);
 
-const usersTable2 = new TableClient(`https://${account}.table.core.windows.net`, tblUsers, credential);
-const userPreferencesTable = new TableClient(`https://${account}.table.core.windows.net`, tbUserPreferences, credential);
+const usersTable = TableClient.fromConnectionString(connectionString, tblUsers);
+const userPreferencesTable = TableClient.fromConnectionString(connectionString, tbUserPreferences);
+
 
 export const getUser =async (entityUser:Entity<TUser>) => {
     try {
