@@ -8,14 +8,20 @@ import {
   createConversation,
 } from "@grammyjs/conversations";
 import { getState } from './zipcodes';
-
+import { AzureLogger } from "@azure/logger";
 type MyContext = TContext & ConversationFlavor;
 type MyConversation = Conversation<MyContext>;
 
 const askAndGetResponse = async (conversation: MyConversation, ctx: MyContext, question:string): Promise<string> =>{
-    await ctx.reply(question);
-    const { message } = await conversation.wait();
-    return message?.text;
+    try{
+        await ctx.reply(question);
+        const { message } = await conversation.wait();
+        return message?.text;
+    }
+    catch(e)
+    {
+        AzureLogger.log(`askAndGetResponse: ${e.toString()}`);
+    }
 }
 
 const getUserFromContext = (ctx: Context) => {
@@ -28,56 +34,77 @@ const getUserFromContext = (ctx: Context) => {
 }
 
 async function permitKTConversation(conversation: MyConversation, ctx: MyContext) {
-    let zipCode = await askAndGetResponse(conversation, ctx, "What is your ZIP code?");
-    if(getState(zipCode) !== 'NJ'){
-        await ctx.reply('You are entered invalid zip code, please enter zip code of NJ!');
-        zipCode = await askAndGetResponse(conversation, ctx, "What is your ZIP code?");
+    try
+    {
+        let zipCode = await askAndGetResponse(conversation, ctx, "What is your ZIP code?");
+        if(getState(zipCode) !== 'NJ'){
+            await ctx.reply('You are entered invalid zip code, please enter zip code of NJ!');
+            zipCode = await askAndGetResponse(conversation, ctx, "What is your ZIP code?");
+        }
+        let milesAreaString = await askAndGetResponse(conversation, ctx, "What is your area distance for search in miles?");
+        const milesArea = parseInt(milesAreaString, 10);
+        
+        ctx.reply(`Thank you for update, starting search new appointment in area ${milesArea}mi near ${zipCode} zipcode!`);
+        
+        const tgUser = getUserFromContext(ctx);
+        const userPreference: TUserPreferences = {
+            userId: tgUser.id,
+            zipCode,
+            milesArea,
+            type: TUserPreferencesType.permit,
+        }
+        await addUserPreferences(userPreference);
+        return;
+    }catch(e){
+        AzureLogger.log(`permitKTConversation: ${e.toString()}`);
+        return;
     }
-    let milesAreaString = await askAndGetResponse(conversation, ctx, "What is your area distance for search in miles?");
-    const milesArea = parseInt(milesAreaString, 10);
     
-    ctx.reply(`Thank you for update, starting search new appointment in area ${milesArea}mi near ${zipCode} zipcode!`);
-    
-    const tgUser = getUserFromContext(ctx);
-    const userPreference: TUserPreferences = {
-        userId: tgUser.id,
-        zipCode,
-        milesArea,
-        type: TUserPreferencesType.permit,
-    }
-    await addUserPreferences(userPreference);
 
 }
 
 async function knowledgeTestConversation(conversation: MyConversation, ctx: MyContext) {
-    let zipCode = await askAndGetResponse(conversation, ctx, "What is your ZIP code?");
-    if(getState(zipCode) !== 'NJ'){
-        await ctx.reply('You are entered invalid zip code, please enter zip code of NJ!');
-        zipCode = await askAndGetResponse(conversation, ctx, "What is your ZIP code?");
+    try
+    {
+        let zipCode = await askAndGetResponse(conversation, ctx, "What is your ZIP code?");
+        if(getState(zipCode) !== 'NJ'){
+            await ctx.reply('You are entered invalid zip code, please enter zip code of NJ!');
+            zipCode = await askAndGetResponse(conversation, ctx, "What is your ZIP code?");
+        }
+        let milesAreaString = await askAndGetResponse(conversation, ctx, "What is your area distance for search in miles?");
+        const milesArea = parseInt(milesAreaString, 10);
+        
+        ctx.reply(`Thank you for update, starting search new appointment in area ${milesArea}mi near ${zipCode} zipcode!`);
+        
+        const tgUser = getUserFromContext(ctx);
+        const userPreference: TUserPreferences = {
+            userId: tgUser.id,
+            zipCode,
+            milesArea,
+            type: TUserPreferencesType.knowledgeTest,
+        }
+        await addUserPreferences(userPreference);
+        return;
+    }catch(e){
+        AzureLogger.log(`knowledgeTestConversation: ${e.toString()}`);
+        return;
     }
-    let milesAreaString = await askAndGetResponse(conversation, ctx, "What is your area distance for search in miles?");
-    const milesArea = parseInt(milesAreaString, 10);
-    
-    ctx.reply(`Thank you for update, starting search new appointment in area ${milesArea}mi near ${zipCode} zipcode!`);
-    
-    const tgUser = getUserFromContext(ctx);
-    const userPreference: TUserPreferences = {
-        userId: tgUser.id,
-        zipCode,
-        milesArea,
-        type: TUserPreferencesType.knowledgeTest,
-    }
-    await addUserPreferences(userPreference);
 
 }
 
 
 async function deleteSubscriptionsConversation(conversation: MyConversation, ctx: MyContext) {
-    const promDelete = await askAndGetResponse(conversation, ctx, `Are you sure want delete subscriptions?. You have 0 subscriptions`);
-    ctx.reply(`We are removed your subscriptions! Thank you for being our client!`)
+    try{
+        const promDelete = await askAndGetResponse(conversation, ctx, `Are you sure want delete subscriptions?. You have 0 subscriptions`);
+        await ctx.reply(`We are removed your subscriptions! Thank you for being our client!`);
+        return;
+    }catch(e){
+        AzureLogger.log(`deleteSubscriptionsConversation: ${e.toString()}`);
+        return;
+    }
 }
 
-export const getBot= (TOKEN_BOT:string) : Bot => {
+export const getBot = (TOKEN_BOT:string) : Bot => {
     if(!TOKEN_BOT){ 
         console.log('TOKEN_BOT not defined');
         throw new Error('TOKEN_BOT not defined');
@@ -86,6 +113,11 @@ export const getBot= (TOKEN_BOT:string) : Bot => {
    
     bot.use(session({ initial: () => ({}) }));
     bot.use(conversations());
+
+    bot.command("cancel", async (ctx) => {
+        await ctx.conversation.exit();
+        await ctx.reply("Leaving.");
+    });
 
     bot.use(createConversation(permitKTConversation, 'permitKT'));
     bot.use(createConversation(knowledgeTestConversation, 'knowledgeTest'));
