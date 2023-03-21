@@ -1,5 +1,6 @@
 import { Bot, type Context as TContext, session, Context} from "grammy";
-import {addTGUser, TUserPreferences, TUserPreferencesType, addUserPreferences} from './azure-table';
+import {addTGUser, addUserPreferences} from './azure-table';
+import {TUserPreferences, TUserPreferencesType} from './azure-types';
 import {
   type Conversation,
   type ConversationFlavor,
@@ -109,7 +110,7 @@ export const getBot= (TOKEN_BOT:string) : Bot => {
             return ctx.reply(`Hi, ${tgUser.first_name}!`);
         }
     });
-    
+
     //This function would be added to the dispatcher as a handler for messages coming from the Bot API
     bot.on("message", async (ctx) => {
         const tgUser = getUserFromContext(ctx);
