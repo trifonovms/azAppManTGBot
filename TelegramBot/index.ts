@@ -1,15 +1,29 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 import { Bot, webhookCallback} from "grammy";
 import { getBot } from "./bot";
+import * as express from "express";
+
 
 const TOKEN_BOT = process.env.TOKEN_BOT;
+let httpTrigger: AzureFunction;
 const bot:Bot = getBot(TOKEN_BOT);
 bot.start();
-const httpTrigger: AzureFunction = webhookCallback(bot, "azure");
+
+if(process.env.APP_TYPE==='AZURE'){
+    httpTrigger = webhookCallback(bot, "azure");
+}else{
+    const app = express(); // or whatever you're using
+    app.use(express.json()); // parse the JSON request body
+    
+    // "express" is also used as default if no argument is given.
+    app.use('/tgbot',webhookCallback(bot, "express"));
+    const port = 3000;
+    app.listen(port, () => {
+        console.log(`app listening on port ${port}`)
+    });
+}
 
 export default httpTrigger;
-
-
 // const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
     
 //     context.log('HTTP trigger function processed a request.');
